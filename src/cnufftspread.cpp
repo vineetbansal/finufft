@@ -13,6 +13,7 @@ static inline void evaluate_kernel_vector(FLT *ker, FLT *args, const spread_opts
 static inline void eval_kernel_vec_Horner(FLT *ker, const FLT z, const int w, const spread_opts &opts);
 void interp_line(FLT *out,FLT *du, FLT *ker,BIGINT i1,BIGINT N1,int ns);
 void interp_square(FLT *out,FLT *du, FLT *ker1, FLT *ker2, BIGINT i1,BIGINT i2,BIGINT N1,BIGINT N2,int ns);
+void interp_square_nowrap(FLT *out,FLT *du, FLT *ker1, FLT *ker2, BIGINT i1,BIGINT i2,BIGINT N1,BIGINT N2,int ns); // ********
 void interp_cube(FLT *out,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3,
 		 BIGINT i1,BIGINT i2,BIGINT i3,BIGINT N1,BIGINT N2,BIGINT N3,int ns);
 void spread_subproblem_1d(BIGINT N1,FLT *du0,BIGINT M0,FLT *kx0,FLT *dd0,
@@ -332,7 +333,7 @@ int cnufftspread(
 	    eval_kernel_vec_Horner(ker1,x1,ns,opts);
 	    eval_kernel_vec_Horner(ker2,x2,ns,opts);
 	  }
-	  interp_square(&data_nonuniform[2*j],data_uniform,ker1,ker2,i1,i2,N1,N2,ns);
+	  interp_square_nowrap(&data_nonuniform[2*j],data_uniform,ker1,ker2,i1,i2,N1,N2,ns);  // ************
 	} else {                                                 // 3D
 	  FLT yj=RESCALE(ky[j],N2,opts.pirange);
 	  FLT zj=RESCALE(kz[j],N3,opts.pirange);
@@ -578,6 +579,34 @@ void interp_square(FLT *out,FLT *du, FLT *ker1, FLT *ker2, BIGINT i1,BIGINT i2,B
 	BIGINT j = oy + j1[dx];
 	out[0] += du[2*j] * k;
 	out[1] += du[2*j+1] * k;
+      }
+    }
+  }
+}
+
+void interp_square_nowrap(FLT *out,FLT *du, FLT *ker1, FLT *ker2, BIGINT i1,BIGINT i2,BIGINT N1,BIGINT N2,int ns)
+// *************** don't periodic wrap, avoid ptrs. correct if no NU pts nr edge
+{
+  out[0] = 0.0; out[1] = 0.0;
+  if (0) {  // plain
+    for (int dy=0; dy<ns; dy++) {
+      BIGINT j = N1*(i2+dy) + i1;
+      for (int dx=0; dx<ns; dx++) {
+	FLT k = ker1[dx]*ker2[dy];
+	out[0] += du[2*j] * k;
+	out[1] += du[2*j+1] * k;
+	++j;
+      }
+    }
+  } else {
+   for (int dy=0; dy<ns; dy++) {
+      BIGINT j = N1*(i2+dy) + i1;
+      //#pragma omp simd
+      for (int dx=0; dx<ns; dx++) {
+	FLT k = ker1[dx]*ker2[dy];
+	out[0] += du[2*j] * k;
+	out[1] += du[2*j+1] * k;
+	++j;
       }
     }
   }

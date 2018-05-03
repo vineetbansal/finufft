@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
   int flags = 0;        // default
   int debug = 0;        // default
   int kerpad = 0;       // default
-  int kereval = 0;       // default
+  int kereval = 1;      // default
   if (argc<=1) { usage(); return 0; }
   sscanf(argv[1],"%d",&d);
   if (d<1 || d>3) {
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     unsigned int se=MY_OMP_GET_THREAD_NUM();  // needed for parallel random #s
 #pragma omp for schedule(dynamic,1000000) reduction(+:strre,strim)
     for (BIGINT i=0; i<M; ++i) {
-      kx[i]=rand01r(&se)*N;
+      kx[i]=rand01r(&se)*N; ///************
       //kx[i]=2.0*kx[i] - 50.0;      //// to test folding within +-1 period
       if (d>1) ky[i]=rand01r(&se)*N;      // only fill needed coords
       if (d>2) kz[i]=rand01r(&se)*N;
@@ -180,8 +180,10 @@ int main(int argc, char* argv[])
 #pragma omp for schedule(dynamic,1000000)
       for (BIGINT i=0; i<M; ++i) {       // random target pts
         //kx[i]=10+.9*rand01r(&s)*N;   // or if want to keep ns away from edges
-	kx[i]=rand01r(&s)*N;
-	if (d>1) ky[i]=rand01r(&s)*N;
+	//	kx[i]=rand01r(&s)*N;
+	kx[i]=N/4.0 + 0.5*rand01r(&s)*N;           // ***
+	//	if (d>1) ky[i]=rand01r(&s)*N;
+	if (d>1) ky[i]=N/4.0+0.5*rand01r(&s)*N;    // ***
 	if (d>2) kz[i]=rand01r(&s)*N;
       }
   }
