@@ -175,7 +175,11 @@ int cnufftspread(
       }
     if (opts.debug) printf("\tNU bnds check:\t\t%.3g s\n",timer.elapsedsec());
   }
-    
+
+  // ** temporary hack to use -ve opts.sort to force a simple dir=1 - 6/19/18
+  int spread_simple = (std::signbit(opts.sort)) ? 1 : 0;
+  opts.sort = abs(opts.sort);
+  
   // NONUNIFORM POINT SORTING .....
   // heuristic binning box size for U grid... affects performance:
   double bin_size_x = 16, bin_size_y = 4, bin_size_z = 4;
@@ -213,13 +217,20 @@ int cnufftspread(
     if (M==0)                     // no NU pts, we're done
       return 0;
 
-    int spread_single = (M*100<N);     // low-density heuristic?
-    spread_single = 0;                 // for now
+    //int spread_single = (M*100<N);     // low-density heuristic?
     timer.start();
-    if (spread_single) {    // ------- Basic single-core t1 spreading ------
-      for (BIGINT j=0; j<M; j++) {
-	// todo, not urgent
-      }
+    if (spread_simple) { // ------- Basic single-core t1 spreading (todo) ------
+      for (BIGINT i=0; i<M; i++) {
+	BIGINT j = sort_indices[i];
+	FLT kx0=RESCALE(kx[j],N1,opts.pirange), ky0, kz0;
+	if (N2>1) ky0=RESCALE(ky[j],N2,opts.pirange);
+	if (N3>1) kz0=RESCALE(kz[j],N3,opts.pirange);
+	FLT d[2];
+	d[0] = data_nonuniform[2*j];
+	d[1] = data_nonuniform[2*j+1];
+	// ***  to finish
+		
+      }                 // -------
       if (opts.debug) printf("\tt1 simple spreading:\t%.3g s\n",timer.elapsedsec());
 
     } else {               // ------- Fancy multi-core blocked t1 spreading ----
