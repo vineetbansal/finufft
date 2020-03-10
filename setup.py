@@ -46,7 +46,7 @@ elif sys.platform == "linux" or sys.platform == "linux2":
 
 elif sys.platform == "darwin":
     # Mac OSX
-    libraries = ["lib-static/finufft","fftw3","fftw3_threads","gomp"]
+    libraries = ["lib-static/finufft","fftw3","fftw3_threads","omp"]
     extra_compile_args=['-fopenmp']
     if os.environ["CXX"] == "g++":
         # clang
@@ -57,7 +57,7 @@ elif sys.platform == "darwin":
         #extra_link_args=['-static -fPIC']
 
 ext_modules = [Extension(
-        'finufftpy_cpp',
+        'finufftpy.finufftpy_cpp',
         ['finufftpy/finufftpy.cpp'],
         include_dirs=[
             # Path to pybind11 headers
@@ -78,12 +78,15 @@ def has_flag(compiler, flagname):
     the specified compiler.
     """
     import tempfile
-    with tempfile.NamedTemporaryFile('w', suffix='.cpp') as f:
-        f.write('int main (int argc, char **argv) { return 0; }')
-        try:
-            compiler.compile([f.name], extra_postargs=[flagname])
-        except setuptools.distutils.errors.CompileError:
-            return False
+    f = tempfile.NamedTemporaryFile('w', suffix='.cpp', delete=False)
+    f.write('int main (int argc, char **argv) { return 0; }')
+    f.close()
+    try:
+        compiler.compile([f.name], extra_postargs=[flagname])
+    except setuptools.distutils.errors.CompileError:
+        return False
+    finally:
+        os.remove(f.name)
     return True
 
 # Note C++11 is needed by pybind11, not by the project:
@@ -112,12 +115,12 @@ class BuildExt(build_ext):
     # Mac OSX w/ GCC (not clang) you may need to comment out the next two lines:
     if sys.platform == 'darwin' and os.environ["CXX"] == "g++":
         # (note the test for g++ means clang, confusingly...)
-        c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+        c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.9']
 
     def build_extensions(self):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
-        if ct == 'unix':
+        if ct in ('unix', 'mingw32'):
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
             opts.append(cpp_flag(self.compiler))   # AHB: C++11 not used now, but David Stein says needed.
             if has_flag(self.compiler, '-fvisibility=hidden'):
@@ -140,6 +143,7 @@ setup(
     long_description='python interface to FINUFFT (Flatiron Institute Nonuniform Fast Fourier Transform) library.',
     license="Apache 2",
     ext_modules=ext_modules,
+    package_data={'finufftpy':['libfftw3-3.dll'] if sys.platform.startswith("win") else []},
     packages=['finufftpy'],
     install_requires=['numpy','pybind11>=2.2'],
     cmdclass={'build_ext': BuildExt},

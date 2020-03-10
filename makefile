@@ -143,7 +143,7 @@ endif
 $(STATICLIB): $(OBJS) $(HEADERS)
 	ar rcs $(STATICLIB) $(OBJS)
 $(DYNAMICLIB): $(OBJS) $(HEADERS)
-	$(CXX) -shared $(OMPFLAGS) $(OBJS) -o $(DYNAMICLIB) $(LIBSFFT)
+	$(CXX) $(CXXFLAGS) -shared $(OMPFLAGS) $(OBJS) -o $(DYNAMICLIB) $(LIBSFFT)
 # here $(OMPFLAGS) and $(LIBSFFT) is needed for mac osx.
 # see: http://www.cprogramming.com/tutorial/shared-libraries-linux-gcc.html
 # Also note -l libs come after objects, as per modern GCC requirement.
@@ -247,7 +247,7 @@ python: $(STATICLIB)
 ifeq ($(PREC),SINGLE)
 	@echo "python interface only supports double precision; doing nothing"
 else
-	pip install .
+	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" pip install .
 	python python_tests/demo1d1.py
 	python python_tests/run_accuracy_tests.py
 endif
@@ -255,7 +255,7 @@ python3: $(STATICLIB)
 ifeq ($(PREC),SINGLE)
 	@echo "python3 interface only supports double precision; doing nothing"
 else
-	pip3 install .
+	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" pip3 install .
 	python3 python_tests/demo1d1.py
 	python3 python_tests/run_accuracy_tests.py
 endif

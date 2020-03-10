@@ -1,0 +1,102 @@
+trigger:
+  branches:
+    include:
+      - 'master'
+      
+variables:
+  package_name: finufftpy 
+
+jobs:
+
+- job: ManyLinux
+  pool:
+    vmImage: 'ubuntu-latest'
+  strategy:
+    matrix:
+      64Bit2010:
+        arch: x86_64
+        plat: manylinux2010_x86_64
+        image: quay.io/pypa/manylinux2010_x86_64
+        python.architecture: x64
+
+  steps:
+    - checkout: self
+    - script: |
+        set -ex
+        docker run --rm -e package_name=$(package_name) -v `pwd`:/io $(image) /io/.ci/build-wheels.sh
+        ls -lh wheelhouse/
+        mkdir -p dist
+        cp wheelhouse/$(package_name)*.whl dist/.
+      displayName: Build wheels    
+    - template: azure-publish-dist.yml
+        
+- job: macOS
+  variables:
+    python.architecture: 'x64'
+  strategy:
+    matrix:
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+  pool:
+    vmImage: 'macOS-10.13'
+  steps:
+    - checkout: self
+      submodules: true
+    - script: .ci/macos-install-python.sh '$(python.version)'
+      displayName: Install Python
+    - script: |
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+      displayName: Install Homebrew
+    - script: |
+        brew install libomp
+      displayName: Install libomp
+    - script: |
+        curl http://www.fftw.org/fftw-3.3.8.tar.gz --output fftw-3.3.8.tar.gz
+        tar -xvzf fftw-3.3.8.tar.gz
+        cd fftw-3.3.8
+        CFLAGS="-fPIC -mmacosx-version-min=10.9" ./configure --enable-threads
+        make install
+      displayName: Install fftw
+    - script: |
+        ln -s .ci/make.inc.macosx make.inc
+        make lib
+      displayName: Make finufft library
+    - script: |
+        python -m pip install --upgrade pip
+        python -m pip install --upgrade pytest wheel twine setuptools delocate pybind11
+        python -m pip wheel . -w wheelhouse/
+        mkdir -p dist
+        cp wheelhouse/$(package_name)* dist/.
+        /Library/Frameworks/Python.framework/Versions/$(python.version)/bin/delocate-wheel dist/$(package_name)*.whl
+      displayName: Build wheels    
+    - template: azure-publish-dist.yml
+
+- job: Windows
+  strategy:
+    matrix:
+      Python36:
+        python.version: '3.6'
+        python.architecture: 'x64'
+      Python37:
+        python.version: '3.7'
+        python.architecture: 'x64'
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+    - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+      displayName: Add conda to PATH  
+    - script: |
+        conda update -n base -c defaults conda
+      displayName: Update Conda
+    - script: |
+        conda create --yes --name finufft_build python=$(python.version)
+        call activate finufft_build
+        call conda install --yes setuptools pybind11 m2w64-toolchain libpython
+        call conda install --yes -c vineetbansal m2w64-fftw
+        mingw32-make.exe lib OMP=OFF
+        python setup.py build --compiler=mingw32
+        python setup.py bdist_wheel
+      displayName: Build wheels
+    - template: azure-publish-dist.yml
