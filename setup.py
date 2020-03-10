@@ -78,12 +78,18 @@ def has_flag(compiler, flagname):
     the specified compiler.
     """
     import tempfile
-    with tempfile.NamedTemporaryFile('w', suffix='.cpp') as f:
-        f.write('int main (int argc, char **argv) { return 0; }')
-        try:
-            compiler.compile([f.name], extra_postargs=[flagname])
-        except setuptools.distutils.errors.CompileError:
-            return False
+    # We avoid the concise and more obvious approach of using a context manager
+    # for NamedTemporaryFile because on Windows, the file cannot be opened for
+    # reading while it is still open for writing.
+    f = tempfile.NamedTemporaryFile('w', suffix='.cpp', delete=False)
+    f.write('int main (int argc, char **argv) { return 0; }')
+    f.close()
+    try:
+        compiler.compile([f.name], extra_postargs=[flagname])
+    except setuptools.distutils.errors.CompileError:
+        return False
+    finally:
+        os.remove(f.name)
     return True
 
 # Note C++11 is needed by pybind11, not by the project:
@@ -117,7 +123,7 @@ class BuildExt(build_ext):
     def build_extensions(self):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
-        if ct == 'unix':
+        if ct in ('unix', 'mingw32'):
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
             opts.append(cpp_flag(self.compiler))   # AHB: C++11 not used now, but David Stein says needed.
             if has_flag(self.compiler, '-fvisibility=hidden'):
