@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - 'master'
+      - 'ci'
       
 variables:
   package_name: finufftpy 
