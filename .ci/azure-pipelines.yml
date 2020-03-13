@@ -39,6 +39,8 @@ jobs:
         python.version: '3.6'
       Python37:
         python.version: '3.7'
+      Python38:
+        python.version: '3.8'        
   pool:
     vmImage: 'macOS-10.13'
   steps:
@@ -82,6 +84,9 @@ jobs:
       Python37:
         python.version: '3.7'
         python.architecture: 'x64'
+      Python38:
+        python.version: '3.8'
+        python.architecture: 'x64'        
   pool:
     vmImage: 'vs2017-win2016'
   steps:
