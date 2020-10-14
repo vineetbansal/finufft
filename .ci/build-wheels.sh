@@ -20,7 +20,7 @@ make install
 cd /io/
 make lib
 
-pys=(/opt/python/3*/bin)
+pys=(/opt/python/py3*/bin)
 
 # Filter out Python 3.4
 pys=(${pys[@]//*34*/})
