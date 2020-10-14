@@ -6,7 +6,7 @@
 
 # Max OSX users: please edit as per below comments, and docs/install.rst
 
-__version__ = '1.1.2'
+__version__ = '1.1.2.1'
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -140,7 +140,7 @@ setup(
     author_email='abarnett@flatironinstitute.org',
     url='http://github.com/ahbarnett/finufft',
     description='python interface to FINUFFT',
-    long_description='python interface to FINUFFT (Flatiron Institute Nonuniform Fast Fourier Transform) library.',
+    long_description='This package has been superseded by the finufft PyPI package.',
     license="Apache 2",
     ext_modules=ext_modules,
     package_data={'finufftpy':['libfftw3-3.dll'] if sys.platform.startswith("win") else []},
