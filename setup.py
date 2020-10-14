@@ -145,7 +145,7 @@ setup(
     author_email='abarnett@flatironinstitute.org',
     url='http://github.com/ahbarnett/finufft',
     description='python interface to FINUFFT',
-    long_description='This package has been superseded by the finufft PyPI package.',
+    long_description=long_description,
     long_description_content_type='text/markdown',
     license="Apache 2",
     ext_modules=ext_modules,
