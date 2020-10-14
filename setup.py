@@ -6,7 +6,7 @@
 
 # Max OSX users: please edit as per below comments, and docs/install.rst
 
-__version__ = '1.1.2.1'
+__version__ = '1.1.2.2'
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
@@ -133,6 +133,11 @@ class BuildExt(build_ext):
 
 
 ########## SETUP ###########
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(
     name='finufftpy',
     version=__version__,
@@ -141,6 +146,7 @@ setup(
     url='http://github.com/ahbarnett/finufft',
     description='python interface to FINUFFT',
     long_description='This package has been superseded by the finufft PyPI package.',
+    long_description_content_type='text/markdown',
     license="Apache 2",
     ext_modules=ext_modules,
     package_data={'finufftpy':['libfftw3-3.dll'] if sys.platform.startswith("win") else []},
